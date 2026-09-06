@@ -5,6 +5,26 @@ import Combine
 final class ScreenRecordingResultViewModel: ObservableObject {
     @Published var activeResult: ScreenRecordingResultModel?
 
+    var formattedDuration: String {
+        activeResult?.formattedDuration ?? "00:00"
+    }
+
+    var savedLocation: String {
+        guard let fileURL = activeResult?.fileURL else {
+            let desktopURL = fileManager.urls(for: .desktopDirectory, in: .userDomainMask).first
+            return desktopURL.map { fileManager.displayName(atPath: $0.path) } ?? "Desktop"
+        }
+        let dirURL = fileURL.deletingLastPathComponent()
+        let name = fileManager.displayName(atPath: dirURL.path)
+        return name.isEmpty ? dirURL.lastPathComponent : name
+    }
+
+    var destinationPath: String {
+        guard let fileURL = activeResult?.fileURL else { return "~/Desktop" }
+        let dirPath = fileURL.deletingLastPathComponent().path
+        return (dirPath as NSString).abbreviatingWithTildeInPath
+    }
+
     var onResultReady: ((ScreenRecordingResultModel) -> Void)?
     var onResultDismissed: (() -> Void)?
 

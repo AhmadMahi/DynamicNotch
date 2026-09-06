@@ -3,20 +3,39 @@ import SwiftUI
 struct ScreenRecordingResultNotchView: View {
     @ObservedObject var viewModel: ScreenRecordingResultViewModel
     @Environment(\.isDynamicIsland) private var isDynamicIsland
-    @State private var isHovering: Bool = false
     
     var body: some View {
         VStack {
             Spacer()
-            recordingPreview
-        }
-        .onHover { hovering in
-            withAnimation(.spring(duration: 0.4)) {
-                isHovering = hovering
+            HStack {
+                rightContent
+                Spacer()
+                recordingPreview
             }
+            .padding(.horizontal, 10)
+            
+            buttons
         }
-        .padding(.horizontal, isDynamicIsland ? 10 : 36)
+        .padding(.horizontal, isDynamicIsland ? 10 : 40)
         .padding(.bottom, isDynamicIsland ? 10 : 10)
+    }
+    
+    private var rightContent: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 14, height: 14)
+
+                Text(viewModel.formattedDuration)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(.red)
+            }
+            Text(verbatim: "Saved to \"\(viewModel.savedLocation)\"")
+                .font(.system(size: 16, weight: .regular))
+                .foregroundColor(.white)
+                .lineLimit(1)
+        }
     }
     
     private var recordingPreview: some View {
@@ -27,95 +46,37 @@ struct ScreenRecordingResultNotchView: View {
                         viewModel.openVideo()
                     }) {
                         Color.clear
-                            .frame(height: 145)
+                            .frame(width: 50, height: 50)
                             .overlay(
-                                ZStack {
-                                    Image(nsImage: result.thumbnail)
-                                        .resizable()
-                                        .interpolation(.high)
-                                        .antialiased(true)
-                                        .scaledToFill()
-                                    
-                                    Button(action: viewModel.openVideo) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(.ultraThinMaterial)
-                                                .frame(width: 45, height: 45)
-                                            
-                                            Image(systemName: "play.fill")
-                                                .font(.system(size: 18, weight: .bold))
-                                                .foregroundStyle(Color.white)
-                                                .offset(x: 1.5)
-                                        }
-                                    }
-                                    .buttonStyle(.plain)
-                                    .blur(radius: isHovering ? 0 : 6)
-                                    .opacity(isHovering ? 1 : 0)
-                                    .allowsHitTesting(isHovering)
-                                }
+                                Image(nsImage: result.thumbnail)
+                                    .resizable()
+                                    .interpolation(.high)
+                                    .antialiased(true)
+                                    .scaledToFill()
                             )
-                            .clipShape(RoundedRectangle(cornerRadius: 24))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
-                    .onDrag {
-                        viewModel.markAsDropped()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            viewModel.dismiss()
-                        }
-                        return viewModel.makeItemProvider(for: result)
-                    }
-                    
-                    buttons
-                        .blur(radius: isHovering ? 0 : 6)
-                        .opacity(isHovering ? 1 : 0)
-                        .allowsHitTesting(isHovering)
                 }
             }
         }
     }
     
     private var buttons: some View {
-        VStack(spacing: 10) {
+        HStack {
+            Button(action: { viewModel.openVideo() }) {
+                Text(verbatim: "Watch")
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(PrimaryButtonStyle(height: 35, backgroundColor: .gray.opacity(0.25)))
+            
             Button(action: { viewModel.deleteVideo() }) {
-                ZStack {
-                    Circle()
-                        .fill(.thinMaterial)
-                        .stroke(.white.opacity(0.08))
-                        .frame(width: 30, height: 30)
-                    
-                    Image(systemName: "trash.fill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.white)
-                }
+                Text(verbatim: "Delete")
+                    .fontWeight(.medium)
+                    .foregroundStyle(.red)
             }
-            
-            Button(action: { viewModel.copyToClipboard() }) {
-                ZStack {
-                    Circle()
-                        .fill(.thinMaterial)
-                        .stroke(.white.opacity(0.08))
-                        .frame(width: 30, height: 30)
-                    
-                    Image(systemName: "document.on.document.fill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.white)
-                }
-            }
-            
-            Button(action: { viewModel.showInFinder() }) {
-                ZStack {
-                    Circle()
-                        .fill(.thinMaterial)
-                        .stroke(.white.opacity(0.08))
-                        .frame(width: 30, height: 30)
-                    
-                    Image(systemName: "folder.fill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.white)
-                }
-            }
+            .buttonStyle(PrimaryButtonStyle(height: 35, backgroundColor: .red.opacity(0.25)))
         }
-        .padding(8)
-        .buttonStyle(.plain)
     }
 }
