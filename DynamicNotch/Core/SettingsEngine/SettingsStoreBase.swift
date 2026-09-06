@@ -53,22 +53,25 @@ extension StoredSettingValue where Self: RawRepresentable, Self.RawValue: Stored
     }
 }
 
-@propertyWrapper
-struct StoredDefault<Value: StoredSettingValue> {
-    final class Storage: @unchecked Sendable {
-        let key: String
-        let defaultValue: Value
-        let transform: (@MainActor @Sendable (Value) -> Value)?
-        let subject = PassthroughSubject<Value, Never>()
+final class StoredDefaultStorage<Value: StoredSettingValue>: @unchecked Sendable {
+    let key: String
+    let defaultValue: Value
+    let transform: (@MainActor @Sendable (Value) -> Value)?
+    let subject = PassthroughSubject<Value, Never>()
 
-        init(key: String, defaultValue: Value, transform: (@MainActor @Sendable (Value) -> Value)? = nil) {
-            self.key = key
-            self.defaultValue = defaultValue
-            self.transform = transform
-        }
+    init(key: String, defaultValue: Value, transform: (@MainActor @Sendable (Value) -> Value)? = nil) {
+        self.key = key
+        self.defaultValue = defaultValue
+        self.transform = transform
     }
 
-    private let storage: Storage
+    @inline(never)
+    deinit {}
+}
+
+@propertyWrapper
+struct StoredDefault<Value: StoredSettingValue> {
+    private let storage: StoredDefaultStorage<Value>
 
     @available(*, unavailable, message: "@StoredDefault is only available on properties of SettingsStoreBase subclasses")
     var wrappedValue: Value {
@@ -82,7 +85,7 @@ struct StoredDefault<Value: StoredSettingValue> {
     }
 
     init(key: String, defaultValue: Value, transform: (@MainActor @Sendable (Value) -> Value)? = nil) {
-        self.storage = Storage(key: key, defaultValue: defaultValue, transform: transform)
+        self.storage = StoredDefaultStorage(key: key, defaultValue: defaultValue, transform: transform)
     }
 
     @MainActor

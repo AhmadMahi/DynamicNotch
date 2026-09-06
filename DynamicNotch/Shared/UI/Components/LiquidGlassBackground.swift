@@ -2,15 +2,18 @@ import SwiftUI
 internal import AppKit
 import ObjectiveC
 
-private final class LiquidGlassHostingView<Content: View>: NSHostingView<Content> {
+private final class LiquidGlassHostingView: NSHostingView<AnyView> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         true
     }
+
+    @inline(never)
+    deinit {}
 }
 
-private final class LiquidGlassContainerView<Content: View>: NSView {
+private final class LiquidGlassContainerView: NSView {
     weak var glassView: NSView?
-    var hostingView: LiquidGlassHostingView<Content>?
+    var hostingView: LiquidGlassHostingView?
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         true
@@ -242,7 +245,7 @@ public struct LiquidGlassBackground<Content: View>: NSViewRepresentable {
 
     public func makeNSView(context: Context) -> NSView {
         if let glassType = NSClassFromString("NSGlassEffectView") as? NSView.Type {
-            let container = LiquidGlassContainerView<Content>(frame: .zero)
+            let container = LiquidGlassContainerView(frame: .zero)
             container.translatesAutoresizingMaskIntoConstraints = false
             container.wantsLayer = true
 
@@ -259,7 +262,7 @@ public struct LiquidGlassBackground<Content: View>: NSViewRepresentable {
                 visualEffect.state = .active
             }
 
-            let hosting = LiquidGlassHostingView(rootView: content)
+            let hosting = LiquidGlassHostingView(rootView: AnyView(content))
             hosting.translatesAutoresizingMaskIntoConstraints = false
             glass.setValue(hosting, forKey: "contentView")
 
@@ -285,7 +288,7 @@ public struct LiquidGlassBackground<Content: View>: NSViewRepresentable {
         fallback.material = .underWindowBackground
         fallback.state = .active
 
-        let hosting = LiquidGlassHostingView(rootView: content)
+        let hosting = LiquidGlassHostingView(rootView: AnyView(content))
         hosting.translatesAutoresizingMaskIntoConstraints = false
         fallback.addSubview(hosting)
         NSLayoutConstraint.activate([
@@ -298,9 +301,9 @@ public struct LiquidGlassBackground<Content: View>: NSViewRepresentable {
     }
 
     public func updateNSView(_ nsView: NSView, context: Context) {
-        if let container = nsView as? LiquidGlassContainerView<Content>,
+        if let container = nsView as? LiquidGlassContainerView,
            let glass = container.glassView {
-            container.hostingView?.rootView = content
+            container.hostingView?.rootView = AnyView(content)
             glass.setValue(cornerRadius, forKey: "cornerRadius")
             callPrivateVariantSetter(on: glass, value: variant.rawValue)
             container.configureBackdropLayers()
@@ -308,8 +311,8 @@ public struct LiquidGlassBackground<Content: View>: NSViewRepresentable {
             return
         }
 
-        if let hosting = nsView.subviews.first as? LiquidGlassHostingView<Content> {
-            hosting.rootView = content
+        if let hosting = nsView.subviews.first as? LiquidGlassHostingView {
+            hosting.rootView = AnyView(content)
         }
     }
 }
