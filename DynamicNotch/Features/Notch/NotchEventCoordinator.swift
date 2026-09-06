@@ -63,7 +63,8 @@ final class NotchEventCoordinator: ObservableObject {
             screenRecordingResultViewModel: container.screenRecordingResultViewModel,
             mailManager: container.mailManager,
             messagesManager: container.messagesManager,
-            externalDrivesMonitor: container.externalDrivesMonitor
+            externalDrivesMonitor: container.externalDrivesMonitor,
+            systemNotificationsInterceptor: container.systemNotificationsInterceptor
         )
     }
 
@@ -91,7 +92,8 @@ final class NotchEventCoordinator: ObservableObject {
         screenRecordingResultViewModel: ScreenRecordingResultViewModel? = nil,
         mailManager: MailManager,
         messagesManager: MessagesManager,
-        externalDrivesMonitor: ExternalDrivesMonitor
+        externalDrivesMonitor: ExternalDrivesMonitor,
+        systemNotificationsInterceptor: SystemNotificationsInterceptor? = nil
     ) {
         self.notchViewModel = notchViewModel
         self.settingsViewModel = settingsViewModel
@@ -168,7 +170,8 @@ final class NotchEventCoordinator: ObservableObject {
             settingsViewModel: settingsViewModel,
             mailManager: mailManager,
             messagesManager: messagesManager,
-            externalDrivesMonitor: externalDrivesMonitor
+            externalDrivesMonitor: externalDrivesMonitor,
+            systemNotificationsInterceptor: systemNotificationsInterceptor ?? SystemNotificationsInterceptor()
         )
         let resolvedScreenshotHandler = NotchScreenshotEventsHandler(
             notchViewModel: notchViewModel,

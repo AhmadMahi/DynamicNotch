@@ -26,7 +26,7 @@ struct NotchAnimations {
     static let `default` = preset(.balanced)
 
     static func preset(_ preset: NotchAnimationPreset) -> Self {
-        let damping: Double = 0.75
+        let damping: Double = 0.8
         let baseResponse: Double
         let blend: Double
         let hideShowDelay: Double

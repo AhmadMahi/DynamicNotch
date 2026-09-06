@@ -27,6 +27,7 @@ final class AppContainer {
     let mailManager: MailManager
     let messagesManager: MessagesManager
     let externalDrivesMonitor: ExternalDrivesMonitor
+    let systemNotificationsInterceptor: SystemNotificationsInterceptor
 
     lazy var hardwareHUDMonitor: HardwareHUDMonitor = {
         MainActor.assumeIsolated {
@@ -115,5 +116,6 @@ final class AppContainer {
         self.mailManager = MailManager()
         self.messagesManager = MessagesManager()
         self.externalDrivesMonitor = ExternalDrivesMonitor()
+        self.systemNotificationsInterceptor = SystemNotificationsInterceptor()
     }
 }

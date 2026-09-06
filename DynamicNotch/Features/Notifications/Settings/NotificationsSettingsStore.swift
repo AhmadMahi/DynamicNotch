@@ -29,6 +29,22 @@ final class NotificationsSettingsStore: SettingsStoreBase {
     @StoredDefault(key: GeneralSettingsStorage.Keys.messagesNotificationsPermissionPending, defaultValue: false)
     var isMessagesNotificationsPermissionPending: Bool
 
+    @StoredDefault(key: GeneralSettingsStorage.Keys.systemNotificationsEnabled, defaultValue: false)
+    var isSystemNotificationsEnabled: Bool
+
+    @StoredDefault(
+        key: GeneralSettingsStorage.Keys.systemNotificationDuration,
+        defaultValue: 8,
+        transform: SettingsStoreBase.clampNotificationDuration
+    )
+    var systemNotificationDuration: Int
+
+    @StoredDefault(key: GeneralSettingsStorage.Keys.systemNotificationsHideNative, defaultValue: true)
+    var isSystemNotificationsHideNativeEnabled: Bool
+
+    @StoredDefault(key: GeneralSettingsStorage.Keys.systemNotificationsPermissionPending, defaultValue: false)
+    var isSystemNotificationsPermissionPending: Bool
+
     @StoredDefault(key: GeneralSettingsStorage.Keys.externalDrivesNotificationsEnabled, defaultValue: true)
     var isExternalDrivesNotificationsEnabled: Bool
 
@@ -56,6 +72,10 @@ final class NotificationsSettingsStore: SettingsStoreBase {
         isMessagesNotificationsEnabled = defaultBool(for: GeneralSettingsStorage.Keys.messagesNotificationsEnabled)
         messagesNotificationDuration = Self.defaultNotificationDuration(for: GeneralSettingsStorage.Keys.messagesNotificationDuration)
         isMessagesNotificationsPermissionPending = false
+        isSystemNotificationsEnabled = defaultBool(for: GeneralSettingsStorage.Keys.systemNotificationsEnabled)
+        systemNotificationDuration = Self.defaultNotificationDuration(for: GeneralSettingsStorage.Keys.systemNotificationDuration)
+        isSystemNotificationsHideNativeEnabled = defaultBool(for: GeneralSettingsStorage.Keys.systemNotificationsHideNative)
+        isSystemNotificationsPermissionPending = false
         isExternalDrivesNotificationsEnabled = defaultBool(for: GeneralSettingsStorage.Keys.externalDrivesNotificationsEnabled)
         externalDrivesNotificationDuration = Self.defaultNotificationDuration(for: GeneralSettingsStorage.Keys.externalDrivesNotificationDuration)
         isExternalDrivesIncludeDiskImagesEnabled = defaultBool(for: GeneralSettingsStorage.Keys.externalDrivesIncludeDiskImages)

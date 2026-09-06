@@ -6,20 +6,20 @@ struct ScreenRecordingResultModel: Identifiable, Equatable {
     let fileURL: URL
     let thumbnail: NSImage
     let fileName: String
-    let formattedDuration: String
+    var formattedDuration: String
     let timestamp: Date
 
     init(
         fileURL: URL,
         thumbnail: NSImage,
         fileName: String,
-        formattedDuration: String? = nil,
+        formattedDuration: String = "00:00",
         timestamp: Date = Date()
     ) {
         self.fileURL = fileURL
         self.thumbnail = thumbnail
         self.fileName = fileName
-        self.formattedDuration = formattedDuration ?? Self.formatDuration(for: fileURL)
+        self.formattedDuration = formattedDuration
         self.timestamp = timestamp
     }
 
@@ -27,16 +27,21 @@ struct ScreenRecordingResultModel: Identifiable, Equatable {
         lhs.id == rhs.id && lhs.fileURL == rhs.fileURL
     }
 
-    static func formatDuration(for url: URL) -> String {
+    static func formatDuration(for url: URL) async -> String {
         let asset = AVURLAsset(url: url)
-        let seconds = asset.duration.seconds
-        guard seconds.isFinite && !seconds.isNaN && seconds > 0 else {
+        do {
+            let duration = try await asset.load(.duration)
+            let seconds = duration.seconds
+            guard seconds.isFinite && !seconds.isNaN && seconds > 0 else {
+                return "00:00"
+            }
+            let totalSeconds = Int(seconds.rounded())
+            let minutes = totalSeconds / 60
+            let remainingSeconds = totalSeconds % 60
+            return String(format: "%02d:%02d", minutes, remainingSeconds)
+        } catch {
             return "00:00"
         }
-        let totalSeconds = Int(seconds.rounded())
-        let minutes = totalSeconds / 60
-        let remainingSeconds = totalSeconds % 60
-        return String(format: "%02d:%02d", minutes, remainingSeconds)
     }
 }
 

@@ -146,6 +146,10 @@ enum GeneralSettingsStorage {
         static let messagesNotificationsEnabled = "settings.notifications.messages.enabled"
         static let messagesNotificationDuration = "settings.notifications.messages.duration"
         static let messagesNotificationsPermissionPending = "messagesNotificationsPermissionPending"
+        static let systemNotificationsEnabled = "settings.notifications.system.enabled"
+        static let systemNotificationDuration = "settings.notifications.system.duration"
+        static let systemNotificationsHideNative = "settings.notifications.system.hideNative"
+        static let systemNotificationsPermissionPending = "systemNotificationsPermissionPending"
         static let externalDrivesNotificationsEnabled = "settings.notifications.externalDrives.enabled"
         static let externalDrivesNotificationDuration = "settings.notifications.externalDrives.duration"
         static let externalDrivesIncludeDiskImages = "settings.notifications.externalDrives.includeDiskImages"
@@ -324,6 +328,10 @@ enum GeneralSettingsStorage {
         Keys.messagesNotificationsEnabled: false,
         Keys.messagesNotificationDuration: 8,
         Keys.messagesNotificationsPermissionPending: false,
+        Keys.systemNotificationsEnabled: false,
+        Keys.systemNotificationDuration: 8,
+        Keys.systemNotificationsHideNative: true,
+        Keys.systemNotificationsPermissionPending: false,
         Keys.externalDrivesNotificationsEnabled: true,
         Keys.externalDrivesNotificationDuration: 8,
         Keys.externalDrivesIncludeDiskImages: true,
