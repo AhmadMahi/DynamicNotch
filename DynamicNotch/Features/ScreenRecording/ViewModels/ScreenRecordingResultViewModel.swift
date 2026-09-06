@@ -45,6 +45,12 @@ final class ScreenRecordingResultViewModel: ObservableObject {
 
         self.activeResult = model
         self.onResultReady?(model)
+
+        Task { [weak self] in
+            let duration = await ScreenRecordingResultModel.formatDuration(for: fileURL)
+            guard let self, self.activeResult?.id == model.id else { return }
+            self.activeResult?.formattedDuration = duration
+        }
     }
 
     func markAsDropped() {

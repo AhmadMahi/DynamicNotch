@@ -13,13 +13,24 @@ struct NotificationsSettingsView: View {
     private var subPageNavigation: some View {
         SettingsCard(spacing: 0, padding: 0) {
             SettingsNavigationRowView(
+                title: "settings.notifications.system.title",
+                description: "settings.notifications.system.subtitle",
+                systemImage: "bell.badge.fill",
+                iconColor: .white,
+                color: .red,
+                accessibilityIdentifier: "settings.notifications.system",
+                position: .first,
+                value: SettingsSubPage.systemNotifications
+            )
+
+            SettingsNavigationRowView(
                 title: "settings.notifications.appleMail.title",
                 description: "settings.notifications.appleMail.subtitle",
                 imageName: "appleMail",
                 color: .clear,
                 iconSize: 34,
                 accessibilityIdentifier: "settings.notifications.appleMail",
-                position: .first,
+                position: .middle,
                 value: SettingsSubPage.appleMail
             )
 

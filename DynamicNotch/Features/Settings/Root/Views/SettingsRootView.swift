@@ -675,6 +675,11 @@ struct SettingsRootView: View {
                 settings: settingsViewModel.notifications,
                 permissionController: permissionController
             )
+        case .systemNotifications:
+            SystemNotificationsSettingsView(
+                settings: settingsViewModel.notifications,
+                permissionController: permissionController
+            )
         case .externalDrives:
             ExternalDrivesNotificationsSettingsView(
                 settings: settingsViewModel.notifications
@@ -725,7 +730,7 @@ struct SettingsRootView: View {
             settingsViewModel.mediaAndFiles.resetFileConverter()
         case .homePagePages:
             settingsViewModel.homePage.resetHomePage()
-        case .appleMail, .messages, .externalDrives:
+        case .appleMail, .messages, .systemNotifications, .externalDrives:
             settingsViewModel.notifications.reset()
         default:
             break

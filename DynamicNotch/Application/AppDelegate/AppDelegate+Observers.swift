@@ -99,11 +99,21 @@ extension AppDelegate {
 
         updateExternalDrivesMonitoringState()
 
+        settingsViewModel.notifications.$isSystemNotificationsEnabled
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateSystemNotificationsMonitoringState()
+            }
+            .store(in: &cancellables)
+
+        updateSystemNotificationsMonitoringState()
+
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.reconcileMailPermissionState()
                 self?.reconcileMessagesPermissionState()
+                self?.updateSystemNotificationsMonitoringState()
             }
             .store(in: &cancellables)
     }
@@ -267,6 +277,19 @@ extension AppDelegate {
             externalDrivesMonitor.startMonitoring()
         } else {
             externalDrivesMonitor.stopMonitoring()
+        }
+    }
+
+    func updateSystemNotificationsMonitoringState() {
+        guard !isRunningUITests else { return }
+
+        let isEnabled = settingsViewModel.notifications.isSystemNotificationsEnabled
+        let hasAccessibility = AXIsProcessTrusted()
+
+        if isEnabled && hasAccessibility {
+            systemNotificationsInterceptor.startMonitoring()
+        } else {
+            systemNotificationsInterceptor.stopMonitoring()
         }
     }
 

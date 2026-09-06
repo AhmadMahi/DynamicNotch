@@ -14,6 +14,7 @@ final class NotchNotificationsEventsHandler {
     private let mailManager: MailManager
     private let messagesManager: MessagesManager
     private let externalDrivesMonitor: ExternalDrivesMonitor
+    private let systemNotificationsInterceptor: SystemNotificationsInterceptor
     
     private var recentNotifications: [AppNotificationItem] = []
     private var isMessagesAudioPlaying = false
@@ -24,13 +25,15 @@ final class NotchNotificationsEventsHandler {
         settingsViewModel: SettingsViewModel,
         mailManager: MailManager,
         messagesManager: MessagesManager,
-        externalDrivesMonitor: ExternalDrivesMonitor
+        externalDrivesMonitor: ExternalDrivesMonitor,
+        systemNotificationsInterceptor: SystemNotificationsInterceptor
     ) {
         self.notchViewModel = notchViewModel
         self.settingsViewModel = settingsViewModel
         self.mailManager = mailManager
         self.messagesManager = messagesManager
         self.externalDrivesMonitor = externalDrivesMonitor
+        self.systemNotificationsInterceptor = systemNotificationsInterceptor
         
         setupListeners()
         observeMessagesPresentation()
@@ -48,6 +51,25 @@ final class NotchNotificationsEventsHandler {
         externalDrivesMonitor.onDriveEvent = { [weak self] drive in
             self?.handleExternalDriveEvent(drive)
         }
+
+        systemNotificationsInterceptor.onNotificationReceived = { [weak self] notification in
+            self?.handleSystemNotification(notification)
+        }
+
+        systemNotificationsInterceptor.isEnabled = settingsViewModel.notifications.isSystemNotificationsEnabled
+        systemNotificationsInterceptor.hideNativeBanners = settingsViewModel.notifications.isSystemNotificationsHideNativeEnabled
+
+        settingsViewModel.notifications.$isSystemNotificationsEnabled
+            .sink { [weak self] enabled in
+                self?.systemNotificationsInterceptor.isEnabled = enabled
+            }
+            .store(in: &cancellables)
+
+        settingsViewModel.notifications.$isSystemNotificationsHideNativeEnabled
+            .sink { [weak self] hideNative in
+                self?.systemNotificationsInterceptor.hideNativeBanners = hideNative
+            }
+            .store(in: &cancellables)
     }
     
     func handleMailMessage(_ message: MailMessage) {
@@ -68,6 +90,31 @@ final class NotchNotificationsEventsHandler {
         recentNotifications = Array(recentNotifications.suffix(2))
 
         showNotificationsNotification(duration: Double(settingsViewModel.notifications.messagesNotificationDuration))
+    }
+
+    func handleSystemNotification(_ notification: SystemNotificationModel) {
+        guard settingsViewModel.notifications.isSystemNotificationsEnabled else { return }
+
+        // Avoid duplicate Messages / Mail if dedicated database watchers are enabled
+        if settingsViewModel.notifications.isMessagesNotificationsEnabled &&
+            (notification.bundleIdentifier == "com.apple.MobileSMS" ||
+             notification.appName.localizedCaseInsensitiveContains("messages") ||
+             notification.appName.localizedCaseInsensitiveContains("сообщения")) {
+            return
+        }
+
+        if settingsViewModel.notifications.isAppleMailNotificationsEnabled &&
+            (notification.bundleIdentifier == "com.apple.mail" ||
+             notification.appName.localizedCaseInsensitiveContains("mail") ||
+             notification.appName.localizedCaseInsensitiveContains("почта")) {
+            return
+        }
+
+        recentNotifications.removeAll { $0.id == "sys-\(notification.id)" }
+        recentNotifications.append(.system(notification))
+        recentNotifications = Array(recentNotifications.suffix(2))
+
+        showNotificationsNotification(duration: Double(settingsViewModel.notifications.systemNotificationDuration))
     }
 
     func handleExternalDriveEvent(_ drive: ExternalDriveModel) {
@@ -135,6 +182,12 @@ final class NotchNotificationsEventsHandler {
                 guard let self else { return }
 
                 mailManager.open(selectedMail)
+                notchViewModel.hideTemporaryNotification()
+            },
+            onOpenSystemNotification: { [weak self] selectedNotification in
+                guard let self else { return }
+
+                systemNotificationsInterceptor.open(notification: selectedNotification)
                 notchViewModel.hideTemporaryNotification()
             }
         )

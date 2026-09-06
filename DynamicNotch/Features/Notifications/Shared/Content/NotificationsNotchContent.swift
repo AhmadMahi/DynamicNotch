@@ -6,6 +6,7 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
     let onAudioPlaybackStateChanged: (Bool) -> Void
     let onOpenMessage: @MainActor (MessagesMessage) -> Void
     let onOpenMail: @MainActor (MailMessage) -> Void
+    let onOpenSystemNotification: @MainActor (SystemNotificationModel) -> Void
 
     var messages: [MessagesMessage] {
         items.compactMap { item in
@@ -34,12 +35,14 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
         items: [AppNotificationItem],
         onAudioPlaybackStateChanged: @escaping (Bool) -> Void = { _ in },
         onOpenMessage: @escaping @MainActor (MessagesMessage) -> Void = { _ in },
-        onOpenMail: @escaping @MainActor (MailMessage) -> Void = { _ in }
+        onOpenMail: @escaping @MainActor (MailMessage) -> Void = { _ in },
+        onOpenSystemNotification: @escaping @MainActor (SystemNotificationModel) -> Void = { _ in }
     ) {
         self.items = items
         self.onAudioPlaybackStateChanged = onAudioPlaybackStateChanged
         self.onOpenMessage = onOpenMessage
         self.onOpenMail = onOpenMail
+        self.onOpenSystemNotification = onOpenSystemNotification
     }
 
     init(
@@ -51,6 +54,7 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
         self.onAudioPlaybackStateChanged = onAudioPlaybackStateChanged
         self.onOpenMessage = onOpen
         self.onOpenMail = { _ in }
+        self.onOpenSystemNotification = { _ in }
     }
 
     static func rowHeight(for item: AppNotificationItem) -> CGFloat {
@@ -59,6 +63,8 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
             return rowHeight(for: message)
         case .mail(let mail):
             return rowHeight(for: mail)
+        case .system(let notification):
+            return rowHeight(for: notification)
         }
     }
 
@@ -78,6 +84,16 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
         let hasSummary = mail.summary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         let hasSubject = mail.subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         if hasSummary && hasSubject {
+            return mailSummaryRowHeight
+        }
+
+        return regularRowHeight
+    }
+
+    static func rowHeight(for notification: SystemNotificationModel) -> CGFloat {
+        let hasSubtitle = notification.subtitle?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        let hasBody = notification.body?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        if hasSubtitle && hasBody {
             return mailSummaryRowHeight
         }
 
@@ -164,6 +180,8 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
             return singleExtraHeight(for: message, baseWidth: baseWidth, isDynamicIsland: isDynamicIsland)
         case .mail(let mail):
             return singleExtraHeight(for: mail, baseWidth: baseWidth, isDynamicIsland: isDynamicIsland)
+        case .system(let notification):
+            return singleExtraHeight(for: notification, baseWidth: baseWidth, isDynamicIsland: isDynamicIsland)
         }
     }
 
@@ -192,6 +210,22 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
         }
 
         let fullText = [mail.subject, mail.summary ?? ""].joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        if hasMultilineString(fullText, baseWidth: baseWidth, isDynamicIsland: isDynamicIsland) {
+            return isDynamicIsland ? 72 : 75
+        }
+
+        return 60
+    }
+
+    private func singleExtraHeight(for notification: SystemNotificationModel, baseWidth: CGFloat, isDynamicIsland: Bool) -> CGFloat {
+        let hasSubtitle = notification.subtitle?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        let hasBody = notification.body?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+
+        if hasSubtitle && hasBody {
+            return isDynamicIsland ? 72 : 75
+        }
+
+        let fullText = [notification.title, notification.subtitle ?? "", notification.body ?? ""].joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
         if hasMultilineString(fullText, baseWidth: baseWidth, isDynamicIsland: isDynamicIsland) {
             return isDynamicIsland ? 72 : 75
         }
@@ -294,7 +328,8 @@ struct NotificationsNotchContent: NotchContentProtocol, DynamicIslandCustomizabl
                 items: displayedItems,
                 onAudioPlaybackStateChanged: onAudioPlaybackStateChanged,
                 onOpenMessage: onOpenMessage,
-                onOpenMail: onOpenMail
+                onOpenMail: onOpenMail,
+                onOpenSystemNotification: onOpenSystemNotification
             )
         )
     }

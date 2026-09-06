@@ -7,6 +7,7 @@ struct NotificationsListView: View {
     let onAudioPlaybackStateChanged: (Bool) -> Void
     let onOpenMessage: (MessagesMessage) -> Void
     let onOpenMail: (MailMessage) -> Void
+    let onOpenSystemNotification: (SystemNotificationModel) -> Void
     
     @Environment(\.isDynamicIsland) private var isDynamicIsland
     
@@ -14,12 +15,14 @@ struct NotificationsListView: View {
         items: [AppNotificationItem],
         onAudioPlaybackStateChanged: @escaping (Bool) -> Void = { _ in },
         onOpenMessage: @escaping (MessagesMessage) -> Void = { _ in },
-        onOpenMail: @escaping (MailMessage) -> Void = { _ in }
+        onOpenMail: @escaping (MailMessage) -> Void = { _ in },
+        onOpenSystemNotification: @escaping (SystemNotificationModel) -> Void = { _ in }
     ) {
         self.items = items
         self.onAudioPlaybackStateChanged = onAudioPlaybackStateChanged
         self.onOpenMessage = onOpenMessage
         self.onOpenMail = onOpenMail
+        self.onOpenSystemNotification = onOpenSystemNotification
     }
     
     var body: some View {
@@ -47,6 +50,11 @@ struct NotificationsListView: View {
                         MailNotificationRow(
                             mail: mail,
                             onOpen: onOpenMail
+                        )
+                    case .system(let notification):
+                        SystemNotificationRow(
+                            notification: notification,
+                            onOpen: onOpenSystemNotification
                         )
                     }
                 }
