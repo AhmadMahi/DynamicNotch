@@ -1,0 +1,99 @@
+name: Build and Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ci/build]
+
+jobs:
+  build:
+    name: Build and test (macOS 26, Xcode 26.6)
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26.6
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          sw_vers
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project DynamicNotch.xcodeproj \
+            -scheme DynamicNotch
+
+      - name: Build (Release, ad-hoc signed)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project DynamicNotch.xcodeproj \
+            -scheme DynamicNotch \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            | tee build.log
+
+      - name: Verify the app bundle
+        run: |
+          APP="build/Build/Products/Release/DynamicNotch.app"
+          test -d "$APP" || { echo "No .app produced"; exit 1; }
+          echo "--- size ---";      du -sh "$APP"
+          echo "--- version ---";   /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist" || true
+          echo "--- signature ---"; codesign -dvvv "$APP" 2>&1 || true
+          echo "--- entitlements ---"; codesign -d --entitlements - "$APP" 2>&1 || true
+
+      - name: Run unit tests (333 tests)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project DynamicNotch.xcodeproj \
+            -scheme DynamicNotch \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath build-test \
+            -only-testing:DynamicNotchTests \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            | tee test.log
+
+      - name: Zip the app (ditto preserves framework symlinks)
+        if: success() || failure()
+        run: |
+          APP="build/Build/Products/Release/DynamicNotch.app"
+          if [ -d "$APP" ]; then
+            cd build/Build/Products/Release
+            ditto -c -k --keepParent --sequesterRsrc DynamicNotch.app DynamicNotch.zip
+          fi
+
+      - name: Upload app
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DynamicNotch-app
+          path: build/Build/Products/Release/DynamicNotch.zip
+          if-no-files-found: warn
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: |
+            build.log
+            test.log
+          if-no-files-found: ignore
